@@ -1,0 +1,37 @@
+[bot]
+nick = factoirc
+username = factoirc
+
+host = irc.example.org
+port = 6697
+ssl = true
+ssl_verify = CERT_NONE
+
+includes =
+    irc3.plugins.command
+    factoirc_plugin
+
+autojoins = ${hash}my_channel
+
+[irc3.plugins.command]
+
+# set command char
+cmd = !
+
+# set guard policy
+guard = irc3.plugins.command.mask_based_policy
+
+[irc3.plugins.command.masks]
+# this section is used by the guard to secure the bot's command
+# nick!user@host = all_permissions
+
+[factoirc_plugin]
+rcon_host = localhost
+rcon_port = 27015
+rcon_password = password
+
+# Systemd journal format
+# log_format = (?:[^ ]+ ){5}(?P<username>[^: ]+): (?P<message>.*)
+
+# Raw factorio log format
+log_format = (?P<username>[^: ]+): (?P<message>.*)
