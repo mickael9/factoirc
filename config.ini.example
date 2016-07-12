@@ -24,6 +24,7 @@ guard = irc3.plugins.command.mask_based_policy
 [irc3.plugins.command.masks]
 # this section is used by the guard to secure the bot's command
 # nick!user@host = all_permissions
+* = view
 
 [factoirc_plugin]
 rcon_host = localhost

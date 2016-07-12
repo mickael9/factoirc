@@ -6,6 +6,8 @@ import irc3.utils
 import sys
 import re
 
+ONLINE_RE = re.compile(r'\s*(.*?)\s+\(online\)')
+
 
 @irc3.plugin
 class Plugin(object):
@@ -51,15 +53,18 @@ class Plugin(object):
         """
         cmd = ' '.join(args['<command>'])
         result = self.do_rcon(cmd)
-        print('result: %r' % (result,))
         yield from result
 
-    @command(permission='admin')
+    @command(permission='view')
     def players(self, mask, target, args):
         """Show connected players.
 
             %%players
         """
-        players = self.do_rcon('/players')
-        print('players: %r' % (players,))
-        yield from players
+        players = [m.group(1)
+                   for m in map(ONLINE_RE.match, self.do_rcon('/players'))
+                   if m]
+        if players:
+            return 'Connected players (%d): %s' % (len(players), ', '.join(players))
+        else:
+            return 'No one is connected'
