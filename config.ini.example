@@ -31,8 +31,12 @@ rcon_host = localhost
 rcon_port = 27015
 rcon_password = password
 
-# Systemd journal format
-# log_format = (?:[^ ]+ ){5}(?P<username>[^: ]+): (?P<message>.*)
+# Choose one of the available methods
 
-# Raw factorio log format
-log_format = (?P<username>[^: ]+): (?P<message>.*)
+# Stdin: read the factorio log file from standard input
+# method = stdin
+
+# Systemd: read the factorio log from the systemd journal
+method = systemd
+unit = factorio.service
+
