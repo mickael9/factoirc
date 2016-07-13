@@ -73,14 +73,14 @@ READERS = {
 
 
 @irc3.plugin
-class Plugin(object):
+class Plugin:
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config.get(self.__class__.__module__, {})
+        autojoins = self.bot.config.get('autojoins')
         self.channels = irc3.utils.as_list(
-            self.bot.config.get('autojoins', [])
+            self.config.get('channels', autojoins)
         )
-
         self.reader = None
         self.peer_names = {}
 
@@ -147,7 +147,7 @@ class Plugin(object):
         result = (await conn.exec_command(text)).splitlines()
         return result
 
-    @command(permission='admin')
+    @command(permission='rcon')
     async def rcon(self, mask, target, args):
         '''
             Execute an RCON command
@@ -158,7 +158,7 @@ class Plugin(object):
         result = await self.do_rcon(cmd)
         return result
 
-    @command(permission='view')
+    @command(permission='players')
     async def players(self, mask, target, args):
         '''
             Show connected players.

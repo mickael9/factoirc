@@ -1,9 +1,14 @@
+#
+# factoirc configuration file
+#
+
 [bot]
 nick = factoirc
 username = factoirc
 
 host = irc.example.org
 port = 6697
+
 ssl = true
 ssl_verify = CERT_NONE
 
@@ -11,22 +16,24 @@ includes =
     irc3.plugins.command
     factoirc_plugin
 
-autojoins = ${hash}my_channel
-
-[irc3.plugins.command]
-
-# set command char
-cmd = !
-
-# set guard policy
-guard = irc3.plugins.command.mask_based_policy
-
-[irc3.plugins.command.masks]
-# this section is used by the guard to secure the bot's command
-# nick!user@host = all_permissions
-* = view
+# List of channels to join on connect
+# Use ${hash} as a substitute for the # character
+autojoins = ${hash}factorio_channel ${hash}unrelated_channel
 
 [factoirc_plugin]
+
+# Specify the channels where messages are to be forwarded.
+#
+# They must also be specified in the 'autojoins' variable below in order for
+# the bot to join them.
+#
+# By default, the value of 'autojoins' is used, so you only need to set this
+# if you want your bot to autojoin unrelated channels.
+#
+# channels = ${hash}factorio_channel
+
+
+# RCON parameters
 rcon_host = localhost
 rcon_port = 27015
 rcon_password = password
@@ -40,3 +47,24 @@ rcon_password = password
 method = systemd
 unit = factorio.service
 
+[irc3.plugins.command]
+
+# set command prefix char (eg !help, !rcon ...)
+cmd = !
+
+# set guard policy
+guard = irc3.plugins.command.mask_based_policy
+
+[irc3.plugins.command.masks]
+# This section is used to limit access to certain commands based the 
+# permissions given to each user's mask pattern.
+
+# The following permissions are used by the factoirc plugin:
+#     players: for !players
+#     rcon: for !rcon
+#     all_permissions: all commands can be used without restriction (use with care!)
+# 'view' and 'admin' permissions are not used by this plugin.
+
+# nick!user@host = all_permissions
+* = players view
+johndoe!*@* = rcon admin
