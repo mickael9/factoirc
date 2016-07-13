@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-from irc3.plugins.command import command
-from rcon import RconConnection
 import irc3
 import irc3.utils
 import sys
 import re
+
+from irc3.plugins.command import command
+
+from .rcon import RconConnection
 
 try:
     from systemd import journal
@@ -20,7 +22,7 @@ CHAT_RE = re.compile(r'(?P<username>[^: ]+): (?P<message>.*)')
 
 
 class SystemdJournalLogReader:
-    def __init__(self, loop, callback, unit, **kwargs):
+    def __init__(self, loop, callback, unit='factorio.service', **kwargs):
         if journal is None:
             raise ImportError('Please install the systemd python module')
 
@@ -73,7 +75,9 @@ READERS = {
 
 
 @irc3.plugin
-class Plugin:
+class FactoIRC:
+    requires = ['irc3.plugins.command']
+
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config.get(self.__class__.__module__, {})
