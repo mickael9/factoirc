@@ -2,13 +2,14 @@
 # Copyright (C) 2013 Peter Rowlands
 
 # From pysrcds project: https://github.com/pmrowla/pysrcds
-# Modified to work with python3 and the Factorio implementation of Source RCON
+# Converted to python3 and asyncio.
+# Made compatible to the Factorio RCON implementation.
 
 """Source server RCON communications module"""
 
 import struct
-import socket
 import itertools
+import asyncio
 
 
 # Packet types
@@ -51,60 +52,93 @@ class RconConnection(object):
 
     """RCON client to server connection"""
 
-    def __init__(self, server, port=27015, password='', encoding='utf-8'):
+    def __init__(self, server, port=27015, password='', loop=None,
+                 encoding='utf-8'):
         self.server = server
         self.port = port
         self.encoding = encoding
-        self._sock = socket.create_connection((server, port))
-        self._rfile = self._sock.makefile('rb')
+        self.password = password
+        self.loop = loop
+        self.authenticated = False
         self.pkt_id = itertools.count(1)
-        self._authenticate(password.encode(self.encoding))
 
-    def _authenticate(self, password):
+    async def authenticate(self, password=None):
         """Authenticate with the server using the given password"""
+
+        if password is None:
+            password = self.password
+        password = password.encode(self.encoding)
+
+        self.rd, self.wr = await asyncio.open_connection(
+            self.server, self.port, loop=self.loop
+        )
+
         auth_pkt = RconPacket(next(self.pkt_id), SERVERDATA_AUTH, password)
-        self._send_pkt(auth_pkt)
-        auth_resp = self.read_response()
+        await self._send_pkt(auth_pkt)
+
+        auth_resp = await self.read_response()
 
         if auth_resp.pkt_type != SERVERDATA_AUTH_RESPONSE:
             raise RconError('Received invalid auth response packet')
+
         if auth_resp.pkt_id == -1:
             raise RconAuthError('Bad password')
 
-    def exec_command(self, command):
-        """Execute the given RCON command
+        self.authenticated = True
+
+    async def exec_command(self, command, read_response=True):
+        """
+        Execute the given RCON command
         Return the response body
         """
+
+        if not self.authenticated:
+            await self.authenticate()
+
         cmd_pkt = RconPacket(next(self.pkt_id), SERVERDATA_EXECCOMMAND,
                              command.encode(self.encoding))
-        self._send_pkt(cmd_pkt)
-        resp = self.read_response(cmd_pkt)
-        return resp.body.decode(self.encoding)
 
-    def _send_pkt(self, pkt):
+        await self._send_pkt(cmd_pkt)
+        if read_response:
+            resp = await self.read_response(cmd_pkt)
+            return resp.body.decode(self.encoding)
+        else:
+            return cmd_pkt
+
+    async def _send_pkt(self, pkt):
         """Send one RCON packet over the connection"""
-        data = pkt.pack()
-        self._sock.send(data)
 
-    def _recv_pkt(self):
+        data = pkt.pack()
+        self.wr.write(data)
+        await self.wr.drain()
+
+    async def _recv_pkt(self):
         """Read one RCON packet"""
-        header = self._rfile.read(struct.calcsize('<3i'))
+
+        header = await self.rd.readexactly(struct.calcsize('<3i'))
         (pkt_size, pkt_id, pkt_type) = struct.unpack('<3i', header)
-        body = self._rfile.read(pkt_size - 8)
+        body = await self.rd.readexactly(pkt_size - 8)
+
         # Strip the 2 trailing nulls from the body
         body = body.rstrip(b'\x00')
+
         return RconPacket(pkt_id, pkt_type, body)
 
-    def read_response(self, request=None):
+    async def read_response(self, request=None):
         """Return the next response packet"""
+
         if request and not isinstance(request, RconPacket):
             raise TypeError('Expected RconPacket type for request')
-        response = self._recv_pkt()
+
+        response = await self._recv_pkt()
+
         if (response.pkt_type != SERVERDATA_RESPONSE_VALUE and
                 response.pkt_type != SERVERDATA_AUTH_RESPONSE):
             raise RconError('Recieved unexpected RCON packet type')
+
         if request and response.pkt_id != request.pkt_id:
             raise RconError('Response ID does not match request ID')
+
         return response
 
 
@@ -117,11 +151,21 @@ class RconAuthError(RconError):
     """Raised if an RCON Authentication error occurs"""
 
 
-if __name__ == '__main__':
+def main():
     import sys
+
+    if len(sys.argv) < 5:
+        print('Usage: %s <host> <port> <password> <command>...' % sys.argv[0])
+        sys.exit(1)
+
     host, port, password, *cmd = sys.argv[1:]
     port = int(port)
     cmd = ' '.join(cmd)
 
+    loop = asyncio.get_event_loop()
     conn = RconConnection(host, port, password)
-    print(repr(conn.exec_command(cmd)))
+    resp = loop.run_until_complete(conn.exec_command(cmd))
+    print(resp, end='')
+
+if __name__ == '__main__':
+    main()

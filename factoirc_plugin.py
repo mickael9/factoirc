@@ -138,15 +138,12 @@ class Plugin(object):
                 self.broadcast("%s: %s" % (username, message))
 
     async def do_rcon(self, text):
-        def rcon():
-            host = self.config.get('rcon_host', 'localhost')
-            port = self.config.get('rcon_port', '27015')
-            password = self.config.get('rcon_password', '')
+        host = self.config.get('rcon_host', 'localhost')
+        port = self.config.get('rcon_port', '27015')
+        password = self.config.get('rcon_password', '')
 
-            conn = RconConnection(host, int(port), password)
-            result = conn.exec_command(text).splitlines()
-            return result
-        result = await self.bot.loop.run_in_executor(None, rcon)
+        conn = RconConnection(host, int(port), password, loop=self.bot.loop)
+        result = (await conn.exec_command(text)).splitlines()
         return result
 
     @command(permission='admin')
