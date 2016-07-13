@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-import irc3
-import irc3.utils
 import sys
 import re
+import os
+import asyncio
+
+import irc3
+import irc3.utils
 
 from irc3.plugins.command import command
 
@@ -55,6 +58,10 @@ class StdinLogReader:
         self.callback = callback
         self.task = loop.create_task(self.log_read())
 
+        # If stdin is a file, seek to its end
+        if sys.stdin.seekable():
+            sys.stdin.seek(0, os.SEEK_END)
+
     def __del__(self):
         self.task.cancel()
 
@@ -64,9 +71,13 @@ class StdinLogReader:
                 None,
                 sys.stdin.readline
             )
-            if not line:  # stdin closed...
-                break
-            self.callback(line.strip('\n'))
+            if not line:  # EOF reached
+                if not sys.stdin.seekable():
+                    break
+                await asyncio.sleep(0.2, loop=self.loop)
+                continue
+            line = line.strip('\n')
+            self.callback(line)
 
 READERS = {
     'stdin': StdinLogReader,
