@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+
 from irc3.plugins.command import command
 from rcon import RconConnection
 import irc3
@@ -20,17 +21,19 @@ CHAT_RE = re.compile(r'(?P<username>[^: ]+): (?P<message>.*)')
 
 class SystemdJournalLogReader:
     def __init__(self, loop, callback, unit, **kwargs):
-        print('Using systemd log reader: unit=%s' % unit)
         if journal is None:
-            raise ImportError("Please install the systemd python module")
+            raise ImportError('Please install the systemd python module')
+
         self.loop = loop
         self.callback = callback
         self.reader = journal.Reader()
         self.reader.add_match(_SYSTEMD_UNIT=unit)
         self.reader.seek_tail()
-        # seek_tail() doesn't seem to work as expected and leaves a
-        # few messages at the end so make sure we consume them first
+
+        # seek_tail() still leaves a few messages at the end
+        # so we have to consume them first
         list(self.reader)
+
         self.fd = self.reader.fileno()
         self.loop.add_reader(self.fd, self.on_fd_ready)
 
@@ -46,7 +49,6 @@ class SystemdJournalLogReader:
 
 class StdinLogReader:
     def __init__(self, loop, callback, **kwargs):
-        print('Using stdin log reader')
         self.loop = loop
         self.callback = callback
         self.task = loop.create_task(self.log_read())
@@ -94,17 +96,16 @@ class Plugin(object):
     async def on_privmsg(self, mask, target, data, **kwargs):
         if target not in self.channels:
             return
-        if data[0:1] == '!':
+        if data.startswith(self.bot.config.get('cmd', '!')):
             return
 
         await self.do_rcon('(irc) %s: %s' % (mask.nick, data))
 
     def broadcast(self, msg):
         for channel in self.channels:
-            self.bot.privmsg(channel, "(factorio) %s" % msg)
+            self.bot.privmsg(channel, '(factorio) %s' % msg)
 
     def log_line(self, line):
-        print('Got log line: %r' % line)
         for pattern in (CHAT_RE, JOIN_PART_RE, USERNAME_RE):
             m = pattern.match(line)
             if not m:
@@ -135,7 +136,7 @@ class Plugin(object):
                 if username == '<server>':
                     continue
                 message = m.group('message')
-                self.broadcast("%s: %s" % (username, message))
+                self.broadcast('%s: %s' % (username, message))
 
     async def do_rcon(self, text):
         host = self.config.get('rcon_host', 'localhost')
@@ -148,20 +149,22 @@ class Plugin(object):
 
     @command(permission='admin')
     async def rcon(self, mask, target, args):
-        """Execute an RCON command
+        '''
+            Execute an RCON command
 
             %%rcon <command>...
-        """
+        '''
         cmd = ' '.join(args['<command>'])
         result = await self.do_rcon(cmd)
         return result
 
     @command(permission='view')
     async def players(self, mask, target, args):
-        """Show connected players.
+        '''
+            Show connected players.
 
             %%players
-        """
+        '''
         players = await self.do_rcon('/players')
         players = [m.group(1)
                    for m in map(ONLINE_RE.match, players)
