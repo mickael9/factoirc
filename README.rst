@@ -38,7 +38,7 @@ Depending on your setup, you will have to use either the `stdin` or the `systemd
 Using `stdin` method
 ~~~~~~~~~~~~~~~~~~~~
 
-Unless you're running your Factorio server on a Linux machine using `systemd`, this is the method you'll use..
+Unless you're running your Factorio server on a Linux machine using `systemd`, this is the method you'll use.
 
 You will need to connect the factorio server output to the FactoIRC bot.
 
@@ -46,10 +46,10 @@ This can be achieved using a command such as:
 
 .. code:: bash
    
-    $ factorio --rcon-port=27015 --rcon-password=password | irc3 config.ini
+    $ factorio --rcon-port=27015 --rcon-password=password --start-server=save.zip | irc3 config.ini
 
 
-Alternatively, you might want to separate execution of Factorio and the bot using an intermediate log file.
+Alternatively, you might want to separate execution of Factorio and the bot using an intermediate log file:
 
 .. code:: bash
 
