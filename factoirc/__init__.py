@@ -20,7 +20,7 @@ except ImportError:
 ONLINE_RE = re.compile(r'\s*(.*?)\s+\(online\)')
 LOG_PATTERN = r'\s*(?P<time>[\d.]+) (?P<level>Info|Verbose|Warning|Error) '
 JOIN_PART_RE = re.compile(LOG_PATTERN + r'[^ ]+ MapTick\(\d+\) processed Player(?P<action>Leave|Join)Game peerID\((?P<peer_id>\d+)\).*')
-USERNAME_RE = re.compile(LOG_PATTERN + r'[^ ]+ Received peer info for peer\((?P<peer_id>\d+)\) username\((?P<username>mickael9)\).*')
+USERNAME_RE = re.compile(LOG_PATTERN + r'[^ ]+ Received peer info for peer\((?P<peer_id>\d+)\) username\((?P<username>[^)]+)\).*')
 CHAT_RE = re.compile(r'(?P<username>[^: ]+): (?P<message>.*)')
 
 
