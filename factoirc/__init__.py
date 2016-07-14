@@ -4,6 +4,7 @@ import sys
 import re
 import os
 import asyncio
+import logging
 
 import irc3
 import irc3.utils
@@ -92,6 +93,7 @@ class FactoIRC:
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config.get(self.__class__.__module__, {})
+        self.log = logging.getLogger('irc3.%s' % __name__)
         autojoins = self.bot.config.get('autojoins')
         self.channels = irc3.utils.as_list(
             self.config.get('channels', autojoins)
@@ -117,14 +119,20 @@ class FactoIRC:
         await self.do_rcon('(irc) %s: %s' % (mask.nick, data))
 
     def broadcast(self, msg):
+        self.log.debug('broadcast: %s', msg)
+
         for channel in self.channels:
             self.bot.privmsg(channel, '(factorio) %s' % msg)
 
     def log_line(self, line):
+        self.log.debug('log line: %s', line)
+
         for pattern in (CHAT_RE, JOIN_PART_RE, USERNAME_RE):
             m = pattern.match(line)
             if not m:
                 continue
+
+            self.log.debug('regex match: %r', m.groupdict())
 
             if pattern == USERNAME_RE:
                 peer_id = m.group('peer_id')
@@ -158,8 +166,13 @@ class FactoIRC:
         port = self.config.get('rcon_port', '27015')
         password = self.config.get('rcon_password', '')
 
+        self.log.debug('RCON request: %s', text)
+
         conn = RconConnection(host, int(port), password, loop=self.bot.loop)
         result = (await conn.exec_command(text)).splitlines()
+
+        self.log.debug('RCON response: %r', result)
+
         return result
 
     @command(permission='rcon')
