@@ -1,10 +1,15 @@
 from setuptools import setup, find_packages
+
+with open('README.rst', 'r', encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='factoirc',
 
     version='0.1',
 
     description='Bidirectional IRC bridge for Factorio',
+    long_description=long_description,
 
     url='https://github.com/mickael9/factoirc',
 
