@@ -141,6 +141,9 @@ class RconConnection(object):
 
         return response
 
+    def close(self):
+        self.wr.close()
+
 
 class RconError(Exception):
     """Generic RCON error"""

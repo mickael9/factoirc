@@ -169,7 +169,10 @@ class FactoIRC:
         self.log.debug('RCON request: %s', text)
 
         conn = RconConnection(host, int(port), password, loop=self.bot.loop)
-        result = (await conn.exec_command(text)).splitlines()
+        try:
+            result = (await conn.exec_command(text)).splitlines()
+        finally:
+            conn.close()
 
         self.log.debug('RCON response: %r', result)
 
