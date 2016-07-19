@@ -51,6 +51,7 @@ class SystemdJournalLogReader:
             if not entry:  # empty dict = no more entries
                 break
             self.callback(entry['MESSAGE'])
+        self.reader.process()
 
 
 class StdinLogReader:
