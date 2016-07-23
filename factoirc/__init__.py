@@ -22,7 +22,8 @@ ONLINE_RE = re.compile(r'\s*(.*?)\s+\(online\)')
 LOG_PATTERN = r'\s*(?P<time>[\d.]+) (?P<level>Info|Verbose|Warning|Error) '
 JOIN_PART_RE = re.compile(LOG_PATTERN + r'[^ ]+ MapTick\(\d+\) processed Player(?P<action>Leave|Join)Game peerID\((?P<peer_id>\d+)\).*')
 USERNAME_RE = re.compile(LOG_PATTERN + r'[^ ]+ Received peer info for peer\((?P<peer_id>\d+)\) username\((?P<username>[^)]+)\).*')
-CHAT_RE = re.compile(r'(?P<username>[^: ]+): (?P<message>.*)')
+CHAT_RE = re.compile(r'''(?:(?P<date>\d+-\d+-\d+)\s+(?P<time>\d+:\d+:\d+)\s+\[CHAT\]\s+)? # prefix for >=0.13.10
+                         (?P<username>[^: ]+):\s+(?P<message>.*)''', re.X)
 
 
 class SystemdJournalLogReader:
