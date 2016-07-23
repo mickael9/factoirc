@@ -5,6 +5,7 @@ import re
 import os
 import asyncio
 import logging
+import traceback
 
 import irc3
 import irc3.utils
@@ -172,7 +173,11 @@ class FactoIRC:
 
         conn = RconConnection(host, int(port), password, loop=self.bot.loop)
         try:
-            result = (await conn.exec_command(text)).splitlines()
+            result = (await asyncio.wait_for(
+                conn.exec_command(text),
+                timeout=float(self.config.get('rcon_timeout', '5')),
+                loop=self.bot.loop,
+            )).splitlines()
         finally:
             conn.close()
 
@@ -188,7 +193,11 @@ class FactoIRC:
             %%rcon <command>...
         '''
         cmd = ' '.join(args['<command>'])
-        result = await self.do_rcon(cmd)
+        try:
+            result = await self.do_rcon(cmd)
+        except Exception as e:
+            traceback.print_exc()
+            return 'ERROR: %s' % e
         return result
 
     @command(permission='players')
@@ -198,7 +207,11 @@ class FactoIRC:
 
             %%players
         '''
-        players = await self.do_rcon('/players')
+        try:
+            players = await self.do_rcon('/players')
+        except Exception as e:
+            traceback.print_exc()
+            return 'ERROR: %s' % e
         players = [m.group(1)
                    for m in map(ONLINE_RE.match, players)
                    if m]

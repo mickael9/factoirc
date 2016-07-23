@@ -61,6 +61,7 @@ class RconConnection(object):
         self.loop = loop
         self.authenticated = False
         self.pkt_id = itertools.count(1)
+        self.wr = None
 
     async def authenticate(self, password=None):
         """Authenticate with the server using the given password"""
@@ -142,7 +143,8 @@ class RconConnection(object):
         return response
 
     def close(self):
-        self.wr.close()
+        if self.wr:
+            self.wr.close()
 
 
 class RconError(Exception):
