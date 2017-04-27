@@ -6,7 +6,7 @@ with open('README.rst', 'r', encoding='utf-8') as f:
 setup(
     name='factoirc',
 
-    version='0.5',
+    version=__import__('factoirc').__version__,
 
     description='Bidirectional IRC bridge for Factorio',
     long_description=long_description,
